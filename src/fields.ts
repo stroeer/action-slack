@@ -65,6 +65,9 @@ export class FieldFactory {
         this.includes('workflow')
           ? createAttachment('workflow', await this.workflow())
           : undefined,
+        this.includes('log')
+          ? createAttachment('log', await this.log())
+          : undefined,
       ],
       undefined,
     );
@@ -211,6 +214,33 @@ export class FieldFactory {
     const value = `<https://github.com/${owner}/${repo}/commit/${sha}/checks|action>`;
     process.env.AS_ACTION = value;
     return value;
+  }
+
+  private async log(): Promise<string> {
+    if (this.octokit === undefined) {
+      process.env.AS_JOB = this.githubTokenIsNotSet;
+      return this.githubTokenIsNotSet;
+    }
+
+    const { owner } = context.repo;
+    const resp = await this.octokit?.actions.listJobsForWorkflowRun({
+      owner,
+      repo: context.repo.repo,
+      run_id: context.runId,
+    });
+    const jobs = resp?.data.jobs.filter(job => job.name !== this.jobName);
+
+    const result = [];
+    for await (const job of jobs) {
+      const res = await this.octokit?.actions.downloadJobLogsForWorkflowRun({
+        owner,
+        repo: context.repo.repo,
+        job_id: job.id,
+      });
+      result.push(res.data);
+    }
+
+    return result.join(',');
   }
 
   private async getCommit(octokit: Octokit) {

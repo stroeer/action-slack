@@ -58,8 +58,16 @@ inputs:
     description: Use this if you want to overwrite the job name.
     default: ""
     required: false
+  github_token:
+    description: Use this if you wish to use a different GitHub token than the one provided by the workflow.
+    required: false
+    default: ${{ github.token }}
+  github_base_url:
+    description: Specify if you want to use GitHub Enterprise.
+    default: ""
+    required: false
 runs:
-  using: node12
+  using: node16
   main: dist/index.js
 branding:
   icon: bell

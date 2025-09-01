@@ -8,27 +8,35 @@ export interface Field {
 }
 
 export class FieldFactory {
-  private octokit?: Octokit;
+  private octokit: Octokit;
   private fields: string[];
   private jobName: string;
+  private gitHubBaseUrl: string;
 
-  constructor(fields: string, jobName: string, octokit?: Octokit) {
+  constructor(
+    fields: string,
+    jobName: string,
+    gitHubBaseUrl: string,
+    octokit: Octokit,
+  ) {
     this.fields = fields.replace(/ /g, '').split(',');
     this.jobName = jobName;
     this.octokit = octokit;
+    this.gitHubBaseUrl =
+      gitHubBaseUrl === '' ? 'https://github.com' : gitHubBaseUrl;
   }
 
   includes(field: string) {
     return this.fields.includes(field) || this.fields.includes('all');
   }
 
-  filterField<T extends Array<Field | undefined>, U extends undefined>(
+  filterField<T extends Array<Field | undefined>, D extends undefined>(
     array: T,
-    diff: U,
+    diff: D,
   ) {
     return array.filter(item => item !== diff) as Exclude<
       T extends { [K in keyof T]: infer U } ? U : never,
-      U
+      D
     >[];
   }
 
@@ -65,54 +73,56 @@ export class FieldFactory {
         this.includes('workflow')
           ? createAttachment('workflow', await this.workflow())
           : undefined,
+        this.includes('workflowRun')
+          ? createAttachment('workflow', await this.workflowRun())
+          : undefined,
+        this.includes('pullRequest')
+          ? createAttachment('pullRequest', await this.pullRequest())
+          : undefined,
       ],
       undefined,
     );
   }
 
   private async message(): Promise<string> {
-    if (this.octokit === undefined) {
-      process.env.AS_MESSAGE = this.githubTokenIsNotSet;
-      return this.githubTokenIsNotSet;
-    }
-
     const resp = await this.getCommit(this.octokit);
 
-    const value = `<${resp.data.html_url}|${
-      resp.data.commit.message.split('\n')[0]
-    }>`;
+    const value = `<${resp.data.html_url}|${resp.data.commit.message
+      .split('\n')[0]
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')}>`;
     process.env.AS_MESSAGE = value;
     return value;
   }
 
   private async author(): Promise<string> {
-    if (this.octokit === undefined) {
-      process.env.AS_AUTHOR = this.githubTokenIsNotSet;
-      return this.githubTokenIsNotSet;
-    }
-
     const resp = await this.getCommit(this.octokit);
     const author = resp.data.commit.author;
 
-    const value = `${author.name}<${author.email}>`;
+    const value = `${author?.name}<${author?.email}>`;
     process.env.AS_AUTHOR = value;
     return value;
   }
 
   private async took(): Promise<string> {
-    if (this.octokit === undefined) {
-      process.env.AS_JOB = this.githubTokenIsNotSet;
-      return this.githubTokenIsNotSet;
-    }
-
-    const resp = await this.octokit?.actions.listJobsForWorkflowRun({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      run_id: context.runId,
-    });
-    const currentJob = resp?.data.jobs.find(job => job.name === this.jobName);
+    const jobs = await this.octokit?.paginate(
+      this.octokit?.rest.actions.listJobsForWorkflowRun,
+      {
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        run_id: context.runId,
+      },
+      (response, done) => {
+        if (response.data.find(job => this.isCurrentJobName(job.name))) {
+          done();
+        }
+        return response.data;
+      },
+    );
+    const currentJob = jobs.find(job => this.isCurrentJobName(job.name));
     if (currentJob === undefined) {
-      process.env.AS_JOB = this.jobIsNotFound;
+      process.env.AS_TOOK = this.jobIsNotFound;
       return this.jobIsNotFound;
     }
 
@@ -139,25 +149,29 @@ export class FieldFactory {
   }
 
   private async job(): Promise<string> {
-    if (this.octokit === undefined) {
-      process.env.AS_JOB = this.githubTokenIsNotSet;
-      return this.githubTokenIsNotSet;
-    }
-
     const { owner } = context.repo;
-    const resp = await this.octokit?.actions.listJobsForWorkflowRun({
-      owner,
-      repo: context.repo.repo,
-      run_id: context.runId,
-    });
-    const currentJob = resp?.data.jobs.find(job => job.name === this.jobName);
+    const jobs = await this.octokit?.paginate(
+      this.octokit?.rest.actions.listJobsForWorkflowRun,
+      {
+        owner,
+        repo: context.repo.repo,
+        run_id: context.runId,
+      },
+      (response, done) => {
+        if (response.data.find(job => this.isCurrentJobName(job.name))) {
+          done();
+        }
+        return response.data;
+      },
+    );
+    const currentJob = jobs.find(job => this.isCurrentJobName(job.name));
     if (currentJob === undefined) {
       process.env.AS_JOB = this.jobIsNotFound;
       return this.jobIsNotFound;
     }
 
     const jobId = currentJob.id;
-    const value = `<https://github.com/${owner}/${context.repo.repo}/runs/${jobId}|${this.jobName}>`;
+    const value = `<${this.gitHubBaseUrl}/${owner}/${context.repo.repo}/runs/${jobId}|${this.jobName}>`;
     process.env.AS_JOB = value;
 
     return value;
@@ -167,10 +181,9 @@ export class FieldFactory {
     const { sha } = context;
     const { owner, repo } = context.repo;
 
-    const value = `<https://github.com/${owner}/${repo}/commit/${sha}|${sha.slice(
-      0,
-      8,
-    )}>`;
+    const value = `<${
+      this.gitHubBaseUrl
+    }/${owner}/${repo}/commit/${sha}|${sha.slice(0, 8)}>`;
     process.env.AS_COMMIT = value;
     return value;
   }
@@ -178,7 +191,7 @@ export class FieldFactory {
   private async repo(): Promise<string> {
     const { owner, repo } = context.repo;
 
-    const value = `<https://github.com/${owner}/${repo}|${owner}/${repo}>`;
+    const value = `<${this.gitHubBaseUrl}/${owner}/${repo}|${owner}/${repo}>`;
     process.env.AS_REPO = value;
     return value;
   }
@@ -199,8 +212,31 @@ export class FieldFactory {
     const sha = context.payload.pull_request?.head.sha ?? context.sha;
     const { owner, repo } = context.repo;
 
-    const value = `<https://github.com/${owner}/${repo}/commit/${sha}/checks|${context.workflow}>`;
+    const value = `<${this.gitHubBaseUrl}/${owner}/${repo}/commit/${sha}/checks|${context.workflow}>`;
     process.env.AS_WORKFLOW = value;
+    return value;
+  }
+
+  private async workflowRun(): Promise<string> {
+    const { owner, repo } = context.repo;
+    const value = `<${this.gitHubBaseUrl}/${owner}/${repo}/actions/runs/${context.runId}|${context.workflow}>`;
+    process.env.AS_WORKFLOW_RUN = value;
+    return value;
+  }
+
+  private async pullRequest(): Promise<string> {
+    let value;
+    if (context.eventName.startsWith('pull_request')) {
+      value = `<${
+        context.payload.pull_request?.html_url
+      }|${context.payload.pull_request?.title
+        ?.replace(/&/g, '&amp;')
+        ?.replace(/</g, '&lt;')
+        ?.replace(/>/g, '&gt;')} #${context.payload.pull_request?.number}>`;
+    } else {
+      value = 'n/a';
+    }
+    process.env.AS_PULL_REQUEST = value;
     return value;
   }
 
@@ -208,7 +244,7 @@ export class FieldFactory {
     const sha = context.payload.pull_request?.head.sha ?? context.sha;
     const { owner, repo } = context.repo;
 
-    const value = `<https://github.com/${owner}/${repo}/commit/${sha}/checks|action>`;
+    const value = `<${this.gitHubBaseUrl}/${owner}/${repo}/commit/${sha}/checks|action>`;
     process.env.AS_ACTION = value;
     return value;
   }
@@ -216,11 +252,11 @@ export class FieldFactory {
   private async getCommit(octokit: Octokit) {
     const { owner, repo } = context.repo;
     const { sha: ref } = context;
-    return await octokit.repos.getCommit({ owner, repo, ref });
+    return await octokit.rest.repos.getCommit({ owner, repo, ref });
   }
 
-  private get githubTokenIsNotSet() {
-    return 'GitHub Token is not set.';
+  private isCurrentJobName(name: string): boolean {
+    return name === this.jobName || name.endsWith(` / ${this.jobName}`);
   }
 
   private get jobIsNotFound() {

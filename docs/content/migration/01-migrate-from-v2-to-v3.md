@@ -1,10 +1,8 @@
 ---
 title: migrate from v2 to v3
-metaTitle: migrate from v2 to v3 | action-slack
-metaDescription: This is a guide to help you transition from v2 to v3.
 ---
 
-# Fields in the slack will be selective.
+## Fields in the slack will be selective.
 
 In v2, the fields were automatically selected.
 
@@ -29,11 +27,10 @@ steps:
       status: ${{ job.status }}
       fields: repo,message,commit,author,action,eventName,ref,workflow
     env:
-      GITHUB_TOKEN: ${{ github.token }} # optional
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
 ```
 
-# Overwriting text
+## Overwriting text
 
 Until v2, a fixed statement (success/failure/cancel) was inserted for each status.  
 This means that even if the user specifies `text`, a fixed sentence is given at the beginning.
@@ -42,7 +39,7 @@ From v3, if text is specified, it will remove the fixed sentence and completely 
 For example, in v2, ":white_check_mark: Succeeded GitHub Actions" was fixed on a successful job.  
 If a user wants to change :white_check_mark: to a different emoji, it will still be fixed, but from v3 it will be completely overwritten, which eliminates this problem.
 
-# Change the way Mentions are set up
+## Change the way Mentions are set up
 
 In v2, there are two features for Mentions.
 
@@ -57,7 +54,7 @@ This change is intended to consolidate the roles, as the existing method of ment
 `if_mention` specifies the state to fire, and `mention` specifies the target partner.  
 See [With Parameters](/with) for the other states that can be specified by `if_mention`.
 
-## Migrate mention
+### Migrate mention
 
 If you have set the following in v2
 
@@ -82,11 +79,10 @@ steps:
       mention: here
       if_mention: always
     env:
-      GITHUB_TOKEN: ${{ github.token }} # optional
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
 ```
 
-## Migrate only_mention_fail
+### Migrate only_mention_fail
 
 If you have set the following in v2
 
@@ -111,11 +107,10 @@ steps:
       mention: here
       if_mention: failure
     env:
-      GITHUB_TOKEN: ${{ github.token }} # optional
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
 ```
 
-# Abolition of payload
+## Abolition of payload
 
 `payload` has been changed to `custom_payload`.  
 The `payload` will change to have a reserved word role in GitHub Actions.
@@ -196,6 +191,5 @@ steps:
           }]
         }
     env:
-      GITHUB_TOKEN: ${{ github.token }} # optional
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
 ```

@@ -1,8 +1,13 @@
 import * as core from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import { GitHub } from '@actions/github/lib/utils';
-import { IncomingWebhook, IncomingWebhookSendArguments } from '@slack/webhook';
+import {
+  IncomingWebhook,
+  IncomingWebhookSendArguments,
+  IncomingWebhookDefaultArguments,
+} from '@slack/webhook';
 import { FieldFactory } from './fields';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export const Success = 'success';
 type SuccessType = 'success';
@@ -41,24 +46,35 @@ const subteamMention = 'subteam^';
 export class Client {
   private fieldFactory: FieldFactory;
   private webhook: IncomingWebhook;
-  private octokit?: Octokit;
+  private octokit: Octokit;
   private with: With;
 
-  constructor(props: With, token?: string, webhookUrl?: string) {
+  constructor(
+    props: With,
+    token: string,
+    gitHubBaseUrl: string,
+    webhookUrl?: string | null,
+  ) {
     this.with = props;
     if (this.with.fields === '') this.with.fields = 'repo,commit';
 
-    if (token !== undefined) {
-      this.octokit = getOctokit(token);
-    }
+    this.octokit = getOctokit(token);
 
-    if (webhookUrl === undefined) {
+    if (webhookUrl === undefined || webhookUrl === null || webhookUrl === '') {
       throw new Error('Specify secrets.SLACK_WEBHOOK_URL');
     }
-    this.webhook = new IncomingWebhook(webhookUrl);
+
+    const options: IncomingWebhookDefaultArguments = {};
+    const proxy = process.env.https_proxy || process.env.HTTPS_PROXY;
+    if (proxy) {
+      options.agent = new HttpsProxyAgent(proxy);
+    }
+
+    this.webhook = new IncomingWebhook(webhookUrl, options);
     this.fieldFactory = new FieldFactory(
       this.with.fields,
       this.jobName,
+      gitHubBaseUrl,
       this.octokit,
     );
   }

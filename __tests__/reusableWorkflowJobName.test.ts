@@ -1,7 +1,6 @@
 import nock from 'nock';
 
 process.env.GITHUB_RUN_ID = '2';
-process.env.MATRIX_CONTEXT = '{}';
 
 import {
   gitHubToken,
@@ -19,7 +18,7 @@ beforeAll(() => {
   setupNockCommit(process.env.GITHUB_SHA as string);
   setupNockJobs(
     process.env.GITHUB_RUN_ID as string,
-    'actions.matrix-runs.jobs',
+    'actions.reusable-workflow-job-name.jobs',
   );
 });
 afterAll(() => {
@@ -27,7 +26,7 @@ afterAll(() => {
   nock.enableNetConnect();
 });
 
-describe('MATRIX_CONTEXT', () => {
+describe('job_name', () => {
   beforeEach(() => {
     process.env.GITHUB_REPOSITORY = '8398a7/action-slack';
     process.env.GITHUB_EVENT_NAME = 'push';
@@ -35,8 +34,8 @@ describe('MATRIX_CONTEXT', () => {
     github.context.payload = {};
   });
 
-  it('not runs in matrix', async () => {
-    const withParams = {
+  it('works even if the job is in reusable workflow', async () => {
+    const withParams: With = {
       ...newWith(),
       status: Success,
       fields: 'job,took',
@@ -58,14 +57,9 @@ describe('MATRIX_CONTEXT', () => {
               short: true,
               title: 'job',
               value:
-                'Job is not found.\nCheck <https://action-slack.netlify.app/fields|the matrix> or <https://action-slack.netlify.app/with#job_name|job name>.',
+                '<https://github.com/8398a7/action-slack/runs/762195612|notification>',
             },
-            {
-              short: true,
-              title: 'took',
-              value:
-                'Job is not found.\nCheck <https://action-slack.netlify.app/fields|the matrix> or <https://action-slack.netlify.app/with#job_name|job name>.',
-            },
+            { short: true, title: 'took', value: '1 hour 1 min 1 sec' },
           ],
         },
       ],

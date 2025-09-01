@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    rebase-strategy: auto
+    schedule:
+      interval: cron
+      cronjob: "0 9 * * TUE-THU"
+      timezone: "Europe/Berlin"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    open-pull-requests-limit: 10
+    rebase-strategy: auto
+    schedule:
+      interval: cron
+      cronjob: "10 9 * * TUE-THU"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      npm-patches:
+        patterns: ["*"]
+        update-types: ["patch"]
+      npm-minors:
+        patterns: ["*"]
+        update-types: ["minor"]

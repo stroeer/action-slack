@@ -3,7 +3,15 @@ import nock from 'nock';
 process.env.GITHUB_RUN_ID = '2';
 process.env.MATRIX_CONTEXT = '{"os": "ubuntu-18.04"}';
 
-import { newWith, setupNockCommit, setupNockJobs, successMsg } from './helper';
+import {
+  gitHubToken,
+  gitHubBaseUrl,
+  newWith,
+  setupNockCommit,
+  setupNockJobs,
+  successMsg,
+  webhookUrl,
+} from './helper';
 import { Client, With, Success } from '../src/client';
 
 beforeAll(() => {
@@ -33,7 +41,12 @@ describe('MATRIX_CONTEXT', () => {
       status: Success,
       fields: 'job,took',
     };
-    const client = new Client(withParams, process.env.GITHUB_TOKEN, '');
+    const client = new Client(
+      withParams,
+      gitHubToken,
+      gitHubBaseUrl,
+      webhookUrl,
+    );
     expect(await client.prepare('')).toStrictEqual({
       text: successMsg,
       attachments: [

@@ -3,6 +3,11 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Field, With } from '../src/client';
 import { FieldFactory } from '../src/fields';
+import github, { context, getOctokit } from '@actions/github';
+
+export const gitHubToken = 'github-token';
+export const gitHubBaseUrl = '';
+export const webhookUrl = 'https://hooks.slack.com/services/xxx';
 
 export const getTemplate: any = (
   fields: string,
@@ -69,7 +74,12 @@ export const newWith = (): With => {
 };
 
 export const fixedFields = (fields: string, sha?: string) => {
-  const ff = new FieldFactory(fields, process.env.GITHUB_JOB as string);
+  const ff = new FieldFactory(
+    fields,
+    process.env.GITHUB_JOB as string,
+    '',
+    getOctokit(gitHubToken),
+  );
   return ff.filterField(
     [
       ff.includes('repo') ? repo() : undefined,
@@ -82,6 +92,7 @@ export const fixedFields = (fields: string, sha?: string) => {
       ff.includes('eventName') ? eventName() : undefined,
       ff.includes('ref') ? ref() : undefined,
       ff.includes('workflow') ? workflow(sha) : undefined,
+      ff.includes('pullRequest') ? pullRequest() : undefined,
     ],
     undefined,
   );
@@ -100,7 +111,7 @@ export const message = (): Field => {
   return {
     short: true,
     title: 'message',
-    value: `<${obj.html_url}|[#19] support for multiple user mentions>`,
+    value: `<${obj.html_url}|[#19] support for multiple user mentions &amp; escaping &lt;, &gt;>`,
   };
 };
 
@@ -163,5 +174,20 @@ export const took = (): Field => {
     short: true,
     title: 'took',
     value: '1 hour 1 min 1 sec',
+  };
+};
+
+export const pullRequest = (): Field => {
+  let value;
+  if (context.eventName.startsWith('pull_request')) {
+    value =
+      '<https://github.com/8398a7/action-slack/pull/123|Add pullRequest field &amp; escaping &lt;, &gt; #123>';
+  } else {
+    value = 'n/a';
+  }
+  return {
+    short: true,
+    title: 'pullRequest',
+    value: value,
   };
 };

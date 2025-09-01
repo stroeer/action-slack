@@ -1,0 +1,10 @@
+name: Dependabot auto-merge
+
+on: pull_request_target
+
+jobs:
+  dependabot:
+    uses: stroeer/apollo-reusable-workflows/.github/workflows/dependabot_ci.yml@v3
+    permissions:
+      contents: write
+      pull-requests: write

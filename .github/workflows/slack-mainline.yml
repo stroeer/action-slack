@@ -9,31 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Succeeded Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: success
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Failed Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: failure
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Cancelled Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: cancelled
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: ${{ job.status }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Legacy Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: ${{ job.status }}
           username: legacy user
@@ -41,7 +41,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_LEGACY_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Custom Field Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: custom
           custom_payload: |
@@ -75,7 +75,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Custom Field2
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: custom
           fields: workflow,job,commit,repo,ref,author,took
@@ -91,13 +91,13 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_LEGACY_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
       - name: Fields Check
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,author,job,eventName,ref,workflow,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FOR_INTEGRATION_TEST }}
-      - uses: 8398a7/action-slack@v3
+      - uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: ${{ job.status }}
           fields: repo,message,job,took
@@ -109,7 +109,7 @@ jobs:
         os: [ubuntu-18.04, ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: 8398a7/action-slack@v3
+      - uses: 8398a7/action-slack@fbd6aa58ba854a740e11a35d0df80cb5d12101d8 # v3
         with:
           status: ${{ job.status }}
           fields: job,took

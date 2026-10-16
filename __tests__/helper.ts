@@ -51,7 +51,7 @@ export const setupNockJobs = (runId: string, fixture: string) =>
     });
 
 export const successMsg = ':white_check_mark: Succeeded GitHub Actions\n';
-export const cancelMsg = ':warning: Canceled GitHub Actions\n';
+export const cancelMsg = ':warning: Cancelled GitHub Actions\n';
 export const failMsg = ':no_entry: Failed GitHub Actions\n';
 export const getApiFixture = (name: string): any =>
   JSON.parse(
@@ -70,6 +70,9 @@ export const newWith = (): With => {
     channel: '',
     fields: '',
     job_name: '',
+    success_message: successMsg,
+    cancelled_message: cancelMsg,
+    failure_message: failMsg,
   };
 };
 
@@ -92,6 +95,7 @@ export const fixedFields = (fields: string, sha?: string) => {
       ff.includes('eventName') ? eventName() : undefined,
       ff.includes('ref') ? ref() : undefined,
       ff.includes('workflow') ? workflow(sha) : undefined,
+      ff.includes('workflowRun') ? workflowRun() : undefined,
       ff.includes('pullRequest') ? pullRequest() : undefined,
     ],
     undefined,
@@ -126,7 +130,7 @@ export const commit = (): Field => {
 };
 
 export const author = (): Field => {
-  return { short: true, title: 'author', value: '839<8398a7@gmail.com>' };
+  return { short: true, title: 'author', value: '839 <8398a7@gmail.com>' };
 };
 
 export const eventName = (): Field => {
@@ -148,6 +152,16 @@ export const workflow = (sha?: string): Field => {
     value: `<https://github.com/8398a7/action-slack/commit/${
       sha ?? process.env.GITHUB_SHA
     }/checks|${process.env.GITHUB_WORKFLOW as string}>`,
+  };
+};
+
+export const workflowRun = (): Field => {
+  return {
+    short: true,
+    title: 'workflowRun',
+    value: `<https://github.com/8398a7/action-slack/actions/runs/762195612|${
+      process.env.GITHUB_WORKFLOW as string
+    }>`,
   };
 };
 

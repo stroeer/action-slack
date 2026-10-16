@@ -74,7 +74,7 @@ export class FieldFactory {
           ? createAttachment('workflow', await this.workflow())
           : undefined,
         this.includes('workflowRun')
-          ? createAttachment('workflow', await this.workflowRun())
+          ? createAttachment('workflowRun', await this.workflowRun())
           : undefined,
         this.includes('pullRequest')
           ? createAttachment('pullRequest', await this.pullRequest())
@@ -100,7 +100,7 @@ export class FieldFactory {
     const resp = await this.getCommit(this.octokit);
     const author = resp.data.commit.author;
 
-    const value = `${author?.name}<${author?.email}>`;
+    const value = `${author?.name} <${author?.email}>`;
     process.env.AS_AUTHOR = value;
     return value;
   }
@@ -260,7 +260,7 @@ export class FieldFactory {
   }
 
   private get jobIsNotFound() {
-    return 'Job is not found.\nCheck <https://action-slack.netlify.app/fields|the matrix> or <https://action-slack.netlify.app/with#job_name|job name>.';
+    return 'Job is not found.\nCheck <https://action-slack.netlify.app/usage/fields|the matrix> or <https://action-slack.netlify.app/usage/with#job_name|job name>.';
   }
 }
 

@@ -142,6 +142,61 @@ describe('8398a7/action-slack', () => {
     });
   });
 
+  // ensure if messages are specified, they're used
+  describe('message is specified', () => {
+    it('with success', async () => {
+      const success_message = 'Woo hoo!';
+      const withParams = {
+        ...newWith(),
+        success_message,
+        status: Success,
+      };
+      const client = new Client(
+        withParams,
+        gitHubToken,
+        gitHubBaseUrl,
+        webhookUrl,
+      );
+      const payload = getTemplate(withParams.fields, success_message);
+      payload.attachments[0].color = 'good';
+      expect(await client.prepare('')).toStrictEqual(payload);
+    });
+    it('with failure', async () => {
+      const failure_message = "D'oh!";
+      const withParams = {
+        ...newWith(),
+        failure_message,
+        status: Failure,
+      };
+      const client = new Client(
+        withParams,
+        gitHubToken,
+        gitHubBaseUrl,
+        webhookUrl,
+      );
+      const payload = getTemplate(withParams.fields, failure_message);
+      payload.attachments[0].color = 'danger';
+      expect(await client.prepare('')).toStrictEqual(payload);
+    });
+    it('with cancel', async () => {
+      const cancelled_message = 'Why, you little!';
+      const withParams = {
+        ...newWith(),
+        cancelled_message,
+        status: Cancelled,
+      };
+      const client = new Client(
+        withParams,
+        gitHubToken,
+        gitHubBaseUrl,
+        webhookUrl,
+      );
+      const payload = getTemplate(withParams.fields, cancelled_message);
+      payload.attachments[0].color = 'warning';
+      expect(await client.prepare('')).toStrictEqual(payload);
+    });
+  });
+
   it('has no mention', async () => {
     const withParams = {
       ...newWith(),
@@ -525,7 +580,7 @@ describe('8398a7/action-slack', () => {
           }`),
       ).toStrictEqual({
         text: `<https://github.com/8398a7/action-slack/commit/b24f03a32e093fe8d55e23cfd0bb314069633b2f/checks|PR Checks>
-<https://github.com/8398a7/action-slack/runs/762195612|notification> (<https://github.com/8398a7/action-slack/commit/b24f03a32e093fe8d55e23cfd0bb314069633b2f|b24f03a3>) of <https://github.com/8398a7/action-slack|8398a7/action-slack>@master by 839<8398a7@gmail.com> succeeded in 1 hour 1 min 1 sec`,
+<https://github.com/8398a7/action-slack/runs/762195612|notification> (<https://github.com/8398a7/action-slack/commit/b24f03a32e093fe8d55e23cfd0bb314069633b2f|b24f03a3>) of <https://github.com/8398a7/action-slack|8398a7/action-slack>@master by 839 <8398a7@gmail.com> succeeded in 1 hour 1 min 1 sec`,
       });
     });
   });
